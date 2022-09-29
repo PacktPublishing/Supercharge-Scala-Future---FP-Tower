@@ -1,0 +1,29 @@
+SBT 101
+Sbt is the most common build tool for Scala projects and it is the one we use in this course.
+
+Start an sbt in shell mode by running the command sbt in your terminal. Here is the list of popular commands.
+
+
+Compile
+
+1| exercises/compile
+Run tests
+
+1| exercises/test
+Run all tests in files
+
+1| exercises/testOnly *imperative.Eva*
+This command will run all the tests in the file exercises.action.imperative.EvaluationTest.scala
+
+Run selected tests
+
+1| exercises/testOnly *imperative.Eva* -- -z "lazy"
+This command will run the only test in the file exercises.action.imperative.EvaluationTest.scala which contains the word "lazy" in its description.
+
+Extra
+All commands above start with exercises because they run on the exercises module. There is also an answers module containing all the answers for the course. If you want to avoid to type exercises before every command, you can "move" to the exercises module using the following command in sbt shell:
+
+1| project exercises
+Also if you want to continuously run commands in the background, you can prepend the commands with "~". For example, you can run all tests on every file saved using:
+
+1| ~ exercises/test

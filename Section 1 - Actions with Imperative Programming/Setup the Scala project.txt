@@ -1,0 +1,19 @@
+Setup the Scala project
+Step 1: Install Coursier
+Coursier will allow you to install sbt, the Java Virtual Machine, Ammonite REPL, and other standard Scala tools.
+
+See the setup command.
+
+Step 2: Clone the project
+The project is hosted on GitHub at https://github.com/fp-tower/supercharge-scala-future. You will find there all the exercises, answers and tests.
+
+To download the project, you will need to have git installed and then run either:
+
+1| git clone git@github.com:fp-tower/supercharge-scala-future.git
+1| git clone https://github.com/fp-tower/supercharge-scala-future.git
+
+
+Step 3: IDE
+The two most popular IDEs for Scala are Intellij and VS code.
+
+If you have never used Intellij, I suggest using this bundle. It is a one-click installer for IntelliJ with the Scala plugin.

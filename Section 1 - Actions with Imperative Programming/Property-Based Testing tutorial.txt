@@ -1,0 +1,93 @@
+Property-Based Testing tutorial
+The most common testing technique is example-based, in which we specify the expected output of a function for a given input. For example,
+
+1| assert(List(8, 23, 5).sorted == List(5, 8, 23))
+This course will use both example-based and property-based tests (PBT). If you are not familiar with the latter, you can find a crash course about this technique below.
+
+What is a property-based test?
+With PBT, we don’t specify the inputs of the function being tested. Instead, we rely on random generators to select a wide range of inputs. Here is an example:
+
+1| forAll { (list: List[Int]) =>
+2|   assert(list.sorted.size == list.size) 
+3| }
+In this test, we ask the property-based library (ScalaCheck) to generate a random list of Int, and then we check that the function sorted doesn’t change the size of the list.
+
+Here is another example with a filter.
+
+1| forAll { (word: String, predicate: Char => Boolean) =>
+2|   val filtered = word.filter(predicate)
+3|   filtered.foreach(char => assert( predicate(char) ))
+4| }
+In this example, we generate a random String and a random function from Char to Boolean. Then, after filtering the String, we check that all the characters match the predicate.
+
+As you can see, none of these properties guarantee that the function under test is correct. For instance, the following implementations would pass the tests:
+
+1| def sorted(list: List[Int]): List[Int] = list.reverse
+2|  
+3| def filter(word: String): String = ""
+However, the benefit of PBT is that it can discover edge cages in our implementation. My favorite anecdote is a test that led me to discover that the function toInt on String also works with other alphabets than Latin.
+
+"꩙".toInt == 9
+
+How can we configure random generators?
+By default, forAll picks up the random generator using an implicit lookup.
+
+forAll { (number: Int) => ??? }
+
+In the above example, forAll needs to generate a random Int, so it looks up for an implicit value of type Arbitrary[Int]. If no such value is found, then we get a compiler error.
+
+1| case class User(name: String, age: Int)
+2|  
+3| forAll((user: User) => ???)
+4| [Error] could not find implicit value for parameter arbA: Arbitrary[User]
+We can fix this error by defining a random generator for the class User.
+
+1| import org.scalacheck.{Arbitrary, Gen}
+2|  
+3| val userGenerator: Gen[User] =
+4|  for {
+5|  name <- Gen.alphaStr
+6|  age <- Gen.choose(1, 100)
+7|  } yield User(name, age) 
+userGenerator is a random generator of User, where their name consists of letters from a to z (alphaStr) and their age ranges from 1 to 100 years old.
+
+Then, we tell ScalaCheck that userGenerator is the default random generator for the type User by creating an implicit value of type Arbitrary[User].
+
+implicit val userArbitrary: Arbitrary[User] = Arbitrary(userGenerator)
+
+It is also possible to pass random generators explicitly to forAll.
+
+1| forAll(Gen.choose(1, 100)){ (number: Int) => ??? }
+2|  
+3| forAll(userGenerator, userGenerator){ (user1: User, user2: User) => ??? }
+Common PBT strategy
+The most common pitfall with PBTs consists of duplicating the implementation in the test. For example:
+
+1| def isLowerCased(word: String): Boolean = word.forAll(_.isLower)
+2|  
+3| forAll( (word: String) =>
+4|  assert( isLowerCased(word) == word.forAll(_.isLower) )
+5| )
+This test is not really useful, but finding a good property for a function is often difficult. Below, you can find a few common PBT strategies.
+
+Round trip
+A round-trip test checks that we can reverse a transformation. For example, we can transform a String into a List[Char] and then go back to the original String. Another popular example concerns serialisation logic (CSV, JSON, AVRO, etc).
+
+1| def userToCSV(user: User): String = ...
+2| def csvToUser(line: String): Option[User] = ...
+3|  
+4| forAll { (user: User) =>
+5|   val serialised = userToCSV(user)
+6|   val deserialised = csvToUser(serialised)
+7|  
+8|   assert( deserialised == Some(user) )
+9| }
+Oracle
+This technique requires a reliable implementation for the function under test. This is often used if there is a slow but reliable implementation available. For example:
+
+1| def parSum(list: List[Int])(ec: ExecutionContext): Int = 
+2|   ... // calculate the sum in parallel
+3|  
+4| forAll { (list: List[Int]) =>
+5|   assert( parSum(list) == list.sum )
+6| }
